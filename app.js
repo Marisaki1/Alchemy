@@ -1,8 +1,11 @@
 // ============================================================================
 // CRAFTING RECIPE MANAGER - Main JavaScript Application
+// Version 2.0 - With Advanced Sorting and Filtering
 // ============================================================================
 
+// ============================================================================
 // Default Recipes Database - Complete list with all 45 recipes
+// ============================================================================
 const defaultRecipes = [
     { item: "Potion", elements: [{element: "water", amount: 1}, {element: "wind", amount: 1}], tier: 1, shape: [0,0,0,0,0,0,0,0,0], effects: ["", "", ""] },
     { item: "Iron Boots", elements: [{element: "earth", amount: 2}, {element: "fire", amount: 1}], tier: 1, shape: [0,0,0,0,0,0,0,0,0], effects: ["", "", ""] },
@@ -57,6 +60,7 @@ const defaultRecipes = [
 let recipes = [];
 let currentShape = [];
 let pieChart = null;
+let currentFilteredRecipes = [];
 
 // ============================================================================
 // Utility Functions
@@ -91,8 +95,8 @@ function saveToLocalStorage() {
  * Render all components
  */
 function renderAll() {
-    renderRecipes();
-    renderCounter();
+    applyFilters();
+    //renderCounter();
     updateStats();
     renderPieChart();
 }
@@ -182,29 +186,196 @@ function clearShape() {
 }
 
 // ============================================================================
+// Filtering and Sorting Functions
+// ============================================================================
+
+/**
+ * Get currently selected filters and sort options
+ * @returns {Object} Filter and sort configuration
+ */
+function getFilterConfig() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const sortBy = document.getElementById('sortSelect').value;
+    const tierFilter = document.getElementById('tierFilter').value;
+    const effectsFilter = document.getElementById('effectsFilter').value;
+    const elementCountFilter = document.getElementById('elementCountFilter').value;
+    
+    // Get selected element filters
+    const elementFilters = [];
+    if (document.getElementById('filterEarth').checked) elementFilters.push('earth');
+    if (document.getElementById('filterFire').checked) elementFilters.push('fire');
+    if (document.getElementById('filterWater').checked) elementFilters.push('water');
+    if (document.getElementById('filterWind').checked) elementFilters.push('wind');
+    
+    return {
+        searchTerm,
+        sortBy,
+        tierFilter,
+        effectsFilter,
+        elementCountFilter,
+        elementFilters
+    };
+}
+
+/**
+ * Filter recipes based on current filter configuration
+ * @param {Array} recipesToFilter - Recipes to filter
+ * @param {Object} config - Filter configuration
+ * @returns {Array} Filtered recipes
+ */
+function filterRecipes(recipesToFilter, config) {
+    return recipesToFilter.filter(recipe => {
+        // Search filter
+        if (config.searchTerm) {
+            const matchesSearch = 
+                recipe.item.toLowerCase().includes(config.searchTerm) ||
+                recipe.elements.some(e => e.element.toLowerCase().includes(config.searchTerm)) ||
+                `tier ${recipe.tier}`.includes(config.searchTerm) ||
+                (recipe.effects && recipe.effects.some(ef => ef.toLowerCase().includes(config.searchTerm)));
+            
+            if (!matchesSearch) return false;
+        }
+        
+        // Tier filter
+        if (config.tierFilter !== 'all') {
+            if (recipe.tier !== parseInt(config.tierFilter)) return false;
+        }
+        
+        // Element filters (recipe must contain at least one of the selected elements)
+        if (config.elementFilters.length > 0) {
+            const hasSelectedElement = recipe.elements.some(e => 
+                config.elementFilters.includes(e.element)
+            );
+            if (!hasSelectedElement) return false;
+        }
+        
+        // Effects filter
+        if (config.effectsFilter !== 'all') {
+            const hasEffects = recipe.effects && recipe.effects.some(e => e.trim() !== '');
+            if (config.effectsFilter === 'with-effects' && !hasEffects) return false;
+            if (config.effectsFilter === 'no-effects' && hasEffects) return false;
+        }
+        
+        // Element count filter
+        if (config.elementCountFilter !== 'all') {
+            const elementCount = recipe.elements.length;
+            if (elementCount !== parseInt(config.elementCountFilter)) return false;
+        }
+        
+        return true;
+    });
+}
+
+/**
+ * Sort recipes based on sort configuration
+ * @param {Array} recipesToSort - Recipes to sort
+ * @param {string} sortBy - Sort option
+ * @returns {Array} Sorted recipes
+ */
+function sortRecipes(recipesToSort, sortBy) {
+    const sorted = [...recipesToSort];
+    
+    switch(sortBy) {
+        case 'name-asc':
+            sorted.sort((a, b) => a.item.localeCompare(b.item));
+            break;
+        case 'name-desc':
+            sorted.sort((a, b) => b.item.localeCompare(a.item));
+            break;
+        case 'tier-asc':
+            sorted.sort((a, b) => a.tier - b.tier);
+            break;
+        case 'tier-desc':
+            sorted.sort((a, b) => b.tier - a.tier);
+            break;
+        case 'elements-asc':
+            sorted.sort((a, b) => a.elements.length - b.elements.length);
+            break;
+        case 'elements-desc':
+            sorted.sort((a, b) => b.elements.length - a.elements.length);
+            break;
+    }
+    
+    return sorted;
+}
+
+/**
+ * Apply all filters and sorting, then render recipes
+ */
+function applyFilters() {
+    const config = getFilterConfig();
+    let filteredRecipes = filterRecipes(recipes, config);
+    filteredRecipes = sortRecipes(filteredRecipes, config.sortBy);
+    
+    // Store filtered recipes globally for counter
+    currentFilteredRecipes = filteredRecipes;
+    
+    renderRecipesTable(filteredRecipes);
+    updateFilterStatus(filteredRecipes.length);
+    updateCounter(); // Update counter when filters change
+}
+
+/**
+ * Clear all filters and reset to defaults
+ */
+function clearFilters() {
+    // Clear search
+    document.getElementById('searchInput').value = '';
+    
+    // Reset sort
+    document.getElementById('sortSelect').value = 'name-asc';
+    
+    // Reset tier filter
+    document.getElementById('tierFilter').value = 'all';
+    
+    // Reset effects filter
+    document.getElementById('effectsFilter').value = 'all';
+    
+    // Reset element count filter
+    document.getElementById('elementCountFilter').value = 'all';
+    
+    // Uncheck all element filters
+    document.getElementById('filterEarth').checked = false;
+    document.getElementById('filterFire').checked = false;
+    document.getElementById('filterWater').checked = false;
+    document.getElementById('filterWind').checked = false;
+    
+    // Uncheck counter filter checkbox
+    const counterCheckbox = document.getElementById('counterFilterCheckbox');
+    if (counterCheckbox) {
+        counterCheckbox.checked = false;
+    }
+    
+    applyFilters();
+    showToast('All filters cleared!', 'info');
+}
+
+/**
+ * Update the filter status display
+ * @param {number} filteredCount - Number of filtered recipes
+ */
+function updateFilterStatus(filteredCount) {
+    document.getElementById('filteredCount').textContent = filteredCount;
+    document.getElementById('totalCount').textContent = recipes.length;
+}
+
+// ============================================================================
 // Recipe Rendering Functions
 // ============================================================================
 
 /**
- * Render the recipes table
+ * Render the recipes table with filtered and sorted data
+ * @param {Array} recipesToRender - Recipes to display
  */
-function renderRecipes() {
+function renderRecipesTable(recipesToRender) {
     const container = document.getElementById('recipeTableContainer');
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    
-    const filteredRecipes = recipes.filter(r => 
-        r.item.toLowerCase().includes(searchTerm) ||
-        r.elements.some(e => e.element.toLowerCase().includes(searchTerm)) ||
-        `tier ${r.tier}`.includes(searchTerm) ||
-        (r.effects && r.effects.some(ef => ef.toLowerCase().includes(searchTerm)))
-    );
 
-    if (filteredRecipes.length === 0) {
+    if (recipesToRender.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <div style="font-size: 60px;">🔍</div>
                 <h3>No recipes found</h3>
-                <p>Try adjusting your search or add a new recipe</p>
+                <p>Try adjusting your filters or search criteria</p>
             </div>
         `;
         return;
@@ -226,7 +397,7 @@ function renderRecipes() {
             <tbody>
     `;
 
-    filteredRecipes.forEach((recipe, index) => {
+    recipesToRender.forEach((recipe) => {
         const actualIndex = recipes.findIndex(r => r === recipe);
         const elementsHtml = recipe.elements
             .map(e => `<span class="element ${e.element}">${e.element}</span>`)
@@ -271,16 +442,34 @@ function renderRecipes() {
 /**
  * Render the element combination counter
  */
-function renderCounter() {
+function renderCounter(recipesToAnalyze = recipes) {
     const counterMap = {};
     
-    recipes.forEach(recipe => {
+    recipesToAnalyze.forEach(recipe => {
         const combo = recipe.elements.map(e => e.element).slice().sort().join(' + ');
         counterMap[combo] = (counterMap[combo] || 0) + 1;
     });
 
     const sortedCombos = Object.entries(counterMap).sort((a, b) => b[1] - a[1]);
     const container = document.getElementById('counterGrid');
+    
+    // Update counter stats
+    const counterRecipeCount = document.getElementById('counterRecipeCount');
+    if (counterRecipeCount) {
+        counterRecipeCount.textContent = recipesToAnalyze.length;
+    }
+    
+    // Show empty state if no combinations
+    if (sortedCombos.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div style="font-size: 50px;">📊</div>
+                <h3>No element combinations found</h3>
+                <p>No recipes match your current filters</p>
+            </div>
+        `;
+        return;
+    }
     
     container.innerHTML = sortedCombos.map(([combo, count]) => `
         <div class="counter-card">
@@ -664,35 +853,50 @@ function resetData() {
 }
 
 // ============================================================================
-// Search/Filter Functions
-// ============================================================================
-
-/**
- * Filter recipes based on search input
- */
-function filterRecipes() {
-    renderRecipes();
-}
-
-// ============================================================================
 // UI Helper Functions
 // ============================================================================
 
 /**
  * Show toast notification
  * @param {string} message - Message to display
- * @param {string} type - Toast type (success, danger, warning)
+ * @param {string} type - Toast type (success, danger, warning, info)
  */
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
-    toast.style.background = type === 'danger' ? '#dc3545' : 
-                             type === 'warning' ? '#ffc107' : '#28a745';
+    
+    const colors = {
+        'success': '#28a745',
+        'danger': '#dc3545',
+        'warning': '#ffc107',
+        'info': '#17a2b8'
+    };
+    
+    toast.style.background = colors[type] || colors['success'];
     toast.style.display = 'block';
+    
     setTimeout(() => {
         toast.style.display = 'none';
     }, 3000);
 }
+
+// ============================================================================
+// NEW: Update counter based on checkbox state
+// ============================================================================
+/**
+ * Update the element combination counter based on checkbox state
+ */
+function updateCounter() {
+    const checkbox = document.getElementById('counterFilterCheckbox');
+    const useFilteredRecipes = checkbox && checkbox.checked;
+    
+    if (useFilteredRecipes) {
+        renderCounter(currentFilteredRecipes);
+    } else {
+        renderCounter(recipes);
+    }
+}
+
 
 // ============================================================================
 // Event Listeners
