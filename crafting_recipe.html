@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crafting Recipe Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .toolbar {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .element {
+            display: inline-block;
+            padding: 5px 12px;
+            margin: 2px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .earth { background: #8B4513; color: white; }
+        .fire { background: #FF4500; color: white; }
+        .water { background: #1E90FF; color: white; }
+        .wind { background: #87CEEB; color: #333; }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tier-1 { background: #28a745; color: white; }
+        .tier-2 { background: #ffc107; color: #333; }
+        .tier-3 { background: #dc3545; color: white; }
+
+        .shape-grid {
+            display: inline-grid;
+            gap: 2px;
+            background: #333;
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        .shape-cell {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .shape-cell.filled {
+            background: #FF8C00;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkbox-label:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .checkbox-label input {
+            margin-right: 10px;
+            width: auto;
+        }
+
+        .checkbox-label.checked {
+            border-color: #667eea;
+            background: #e7e9fd;
+        }
+
+        .shape-editor {
+            margin-top: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+
+        .shape-editor-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shape-editor-grid {
+            display: inline-grid;
+            gap: 4px;
+            background: #333;
+            padding: 4px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .shape-editor-cell {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .shape-editor-cell:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .shape-editor-cell.active {
+            background: #FF8C00;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .counter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .counter-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .counter-card:hover {
+            transform: translateX(5px);
+        }
+
+        .counter-combo {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .counter-count {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+            animation: slideInRight 0.3s;
+            z-index: 2000;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .clear-shape-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .clear-shape-btn:hover {
+            background: #c82333;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .shape-editor-cell {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 Crafting Recipe Manager</h1>
+            <p>Manage your crafting recipes with ease</p>
+        </header>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openAddModal()">
+                ➕ Add New Recipe
+            </button>
+            <button class="btn btn-success" onclick="downloadRecipesCSV()">
+                📥 Export Recipes CSV
+            </button>
+            <button class="btn btn-info" onclick="downloadCounterCSV()">
+                📊 Export Counter CSV
+            </button>
+            <button class="btn btn-warning" onclick="importData()">
+                📤 Import Data
+            </button>
+            <button class="btn btn-danger" onclick="resetData()">
+                🔄 Reset to Default
+            </button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search recipes..." oninput="filterRecipes()">
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Recipes</div>
+                    <div class="stat-value" id="totalRecipes">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Unique Combinations</div>
+                    <div class="stat-value" id="uniqueCombos">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Most Common Combo</div>
+                    <div class="stat-value" id="mostCommon" style="font-size: 1.2em;">-</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📋 All Recipes</h2>
+                <div id="recipeTableContainer"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📊 Element Combination Counter</h2>
+                <div class="counter-grid" id="counterGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Recipe</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="recipeForm" onsubmit="saveRecipe(event)">
+                    <input type="hidden" id="editIndex" value="-1">
+                    
+                    <div class="form-group">
+                        <label for="itemName">Item Name *</label>
+                        <input type="text" id="itemName" required placeholder="Enter item name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="itemTier">Tier *</label>
+                        <select id="itemTier" required onchange="updateShapeGrid()">
+                            <option value="1">Tier 1 (3x3 Grid)</option>
+                            <option value="2">Tier 2 (4x4 Grid)</option>
+                            <option value="3">Tier 3 (5x5 Grid)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Elements * (Select at least one)</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label" onclick="toggleCheckbox(this)">
+                                <input type="checkbox" name="elements" value="earth">
+                                <span>🌍 Earth</span>
+                            </label>
+                            <label class="checkbox-label" onclick="toggleCheckbox(this)">
+                                <input type="checkbox" name="elements" value="fire">
+                                <span>🔥 Fire</span>
+                            </label>
+                            <label class="checkbox-label" onclick="toggleCheckbox(this)">
+                                <input type="checkbox" name="elements" value="water">
+                                <span>💧 Water</span>
+                            </label>
+                            <label class="checkbox-label" onclick="toggleCheckbox(this)">
+                                <input type="checkbox" name="elements" value="wind">
+                                <span>💨 Wind</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="shape-editor">
+                        <div class="shape-editor-title">
+                            <span>🎨 Recipe Shape Pattern</span>
+                            <button type="button" class="clear-shape-btn" onclick="clearShape()">
+                                Clear Pattern
+                            </button>
+                        </div>
+                        <div style="text-align: center;">
+                            <div id="shapeEditorGrid" class="shape-editor-grid"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            💾 Save Recipe
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="closeModal()" style="flex: 1;">
+                            ❌ Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const defaultRecipes = [
+            { item: "Potion", elements: ["water", "wind"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Iron Boots", elements: ["earth", "fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Coffee", elements: ["water", "fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Thread", elements: ["earth", "wind"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Biscuit", elements: ["earth", "water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Leggings", elements: ["wind", "fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Cloth", elements: ["wind", "fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Plant", elements: ["earth", "wind"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Fluid", elements: ["wind", "water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Neutralizer", elements: ["earth", "fire", "water"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Coal", elements: ["earth", "fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Garland", elements: ["wind", "water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Flour", elements: ["water", "earth"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Bomb", elements: ["fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Staff", elements: ["earth"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Bow", elements: ["wind"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Scissor", elements: ["fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Mystery Box", elements: ["earth", "wind"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Crystal", elements: ["water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Fish net", elements: ["wind", "water"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Mirror", elements: ["water", "fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Cookies", elements: ["water", "fire"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Pickaxe", elements: ["earth", "wind"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Shard", elements: ["wind"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Crossbow", elements: ["wind", "earth"], tier: 3, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Sword", elements: ["earth", "fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Brooch", elements: ["earth", "fire", "water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Steel plate", elements: ["earth", "fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Hammer", elements: ["earth"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Explorer's Backpack", elements: ["wind"], tier: 3, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Chair", elements: ["water"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Mask", elements: ["wind", "earth"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Pants", elements: ["water", "wind"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Tent", elements: ["earth", "water"], tier: 3, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Training Weights", elements: ["earth", "fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Anvil", elements: ["fire", "wind"], tier: 3, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Runestone", elements: ["water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Pedestal", elements: ["fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Earrings", elements: ["earth", "fire", "water"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Slingshot", elements: ["wind", "earth"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Leather", elements: ["earth", "fire"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Apron", elements: ["water", "wind"], tier: 2, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Diamond Fragment", elements: ["earth"], tier: 1, shape: [0,0,0,0,0,0,0,0,0] },
+            { item: "Wings", elements: ["wind"], tier: 3, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+            { item: "Philosopher Stone", elements: ["earth", "fire", "water", "wind"], tier: 3, shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] }
+        ];
+
+        let recipes = [];
+        let currentShape = [];
+
+        function getGridSize(tier) {
+            return tier === 1 ? 3 : tier === 2 ? 4 : 5;
+        }
+
+        function loadRecipes() {
+            const saved = localStorage.getItem('craftingRecipes');
+            recipes = saved ? JSON.parse(saved) : [...defaultRecipes];
+            renderAll();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('craftingRecipes', JSON.stringify(recipes));
+        }
+
+        function renderAll() {
+            renderRecipes();
+            renderCounter();
+            updateStats();
+        }
+
+        function createShapeGrid(shape, tier) {
+            const size = getGridSize(tier);
+            const grid = document.createElement('div');
+            grid.className = 'shape-grid';
+            grid.style.gridTemplateColumns = `repeat(${size}, 16px)`;
+            
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'shape-cell';
+                if (shape[i] === 1) {
+                    cell.classList.add('filled');
+                }
+                grid.appendChild(cell);
+            }
+            
+            return grid;
+        }
+
+        function renderRecipes() {
+            const container = document.getElementById('recipeTableContainer');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filteredRecipes = recipes.filter(r => 
+                r.item.toLowerCase().includes(searchTerm) ||
+                r.elements.some(e => e.toLowerCase().includes(searchTerm)) ||
+                `tier ${r.tier}`.includes(searchTerm)
+            );
+
+            if (filteredRecipes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 60px;">🔍</div>
+                        <h3>No recipes found</h3>
+                        <p>Try adjusting your search or add a new recipe</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Item</th>
+                            <th style="width: 10%;">Tier</th>
+                            <th style="width: 25%;">Elements</th>
+                            <th style="width: 15%;">Recipe</th>
+                            <th style="width: 15%;">Shape</th>
+                            <th style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            filteredRecipes.forEach((recipe, index) => {
+                const actualIndex = recipes.findIndex(r => r === recipe);
+                const elementsHtml = recipe.elements
+                    .map(e => `<span class="element ${e}">${e}</span>`)
+                    .join('');
+                
+                const shapeGridHtml = createShapeGrid(recipe.shape, recipe.tier).outerHTML;
+                
+                html += `
+                    <tr>
+                        <td><strong>${recipe.item}</strong></td>
+                        <td><span class="tier-badge tier-${recipe.tier}">Tier ${recipe.tier}</span></td>
+                        <td>${elementsHtml}</td>
+                        <td>${recipe.elements.join(' + ')}</td>
+                        <td>${shapeGridHtml}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-info btn-sm" onclick="editRecipe(${actualIndex})">
+                                    ✏️ Edit
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRecipe(${actualIndex})">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderCounter() {
+            const counterMap = {};
+            
+            recipes.forEach(recipe => {
+                const combo = recipe.elements.slice().sort().join(' + ');
+                counterMap[combo] = (counterMap[combo] || 0) + 1;
+            });
+
+            const sortedCombos = Object.entries(counterMap).sort((a, b) => b[1] - a[1]);
+            const container = document.getElementById('counterGrid');
+            
+            container.innerHTML = sortedCombos.map(([combo, count]) => `
+                <div class="counter-card">
+                    <div class="counter-combo">${combo}</div>
+                    <div class="counter-count">${count} recipe${count > 1 ? 's' : ''}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('totalRecipes').textContent = recipes.length;
+            
+            const counterMap = {};
+            recipes.forEach(recipe => {
+                const combo = recipe.elements.slice().sort().join(' + ');
+                counterMap[combo] = (counterMap[combo] || 0) + 1;
+            });
+            
+            document.getElementById('uniqueCombos').textContent = Object.keys(counterMap).length;
+            
+            const mostCommon = Object.entries(counterMap).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('mostCommon').textContent = mostCommon ? mostCommon[0] : '-';
+        }
+
+        function updateShapeGrid() {
+            const tier = parseInt(document.getElementById('itemTier').value);
+            const size = getGridSize(tier);
+            const totalCells = size * size;
+            
+            // Preserve existing pattern if possible, otherwise reset
+            if (currentShape.length !== totalCells) {
+                currentShape = new Array(totalCells).fill(0);
+            }
+            
+            renderShapeEditor(size);
+        }
+
+        function renderShapeEditor(size) {
+            const grid = document.getElementById('shapeEditorGrid');
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${size}, 40px)`;
+            
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'shape-editor-cell';
+                if (currentShape[i] === 1) {
+                    cell.classList.add('active');
+                }
+                cell.onclick = () => toggleShapeCell(i);
+                grid.appendChild(cell);
+            }
+        }
+
+        function toggleShapeCell(index) {
+            currentShape[index] = currentShape[index] === 1 ? 0 : 1;
+            const cells = document.querySelectorAll('.shape-editor-cell');
+            cells[index].classList.toggle('active');
+        }
+
+        function clearShape() {
+            currentShape = currentShape.map(() => 0);
+            document.querySelectorAll('.shape-editor-cell').forEach(cell => {
+                cell.classList.remove('active');
+            });
+            showToast('Shape pattern cleared!', 'warning');
+        }
+
+        function filterRecipes() {
+            renderRecipes();
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Recipe';
+            document.getElementById('recipeForm').reset();
+            document.getElementById('editIndex').value = '-1';
+            document.getElementById('itemTier').value = '1';
+            
+            document.querySelectorAll('.checkbox-label').forEach(label => {
+                label.classList.remove('checked');
+            });
+            
+            currentShape = new Array(9).fill(0);
+            updateShapeGrid();
+            
+            document.getElementById('recipeModal').style.display = 'block';
+        }
+
+        function editRecipe(index) {
+            const recipe = recipes[index];
+            document.getElementById('modalTitle').textContent = 'Edit Recipe';
+            document.getElementById('itemName').value = recipe.item;
+            document.getElementById('itemTier').value = recipe.tier;
+            document.getElementById('editIndex').value = index;
+            
+            document.querySelectorAll('.checkbox-label').forEach(label => {
+                const checkbox = label.querySelector('input');
+                const isChecked = recipe.elements.includes(checkbox.value);
+                checkbox.checked = isChecked;
+                if (isChecked) {
+                    label.classList.add('checked');
+                } else {
+                    label.classList.remove('checked');
+                }
+            });
+            
+            currentShape = [...recipe.shape];
+            updateShapeGrid();
+            
+            document.getElementById('recipeModal').style.display = 'block';
+        }
+
+        function deleteRecipe(index) {
+            if (confirm(`Are you sure you want to delete "${recipes[index].item}"?`)) {
+                recipes.splice(index, 1);
+                saveToLocalStorage();
+                renderAll();
+                showToast('Recipe deleted successfully!', 'danger');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('recipeModal').style.display = 'none';
+        }
+
+        function toggleCheckbox(label) {
+            const checkbox = label.querySelector('input');
+            checkbox.checked = !checkbox.checked;
+            label.classList.toggle('checked', checkbox.checked);
+        }
+
+        function saveRecipe(event) {
+            event.preventDefault();
+            
+            const itemName = document.getElementById('itemName').value.trim();
+            const tier = parseInt(document.getElementById('itemTier').value);
+            const checkedElements = Array.from(document.querySelectorAll('input[name="elements"]:checked'))
+                .map(cb => cb.value);
+            
+            if (checkedElements.length === 0) {
+                alert('Please select at least one element!');
+                return;
+            }
+
+            const editIndex = parseInt(document.getElementById('editIndex').value);
+            const recipe = {
+                item: itemName,
+                elements: checkedElements,
+                tier: tier,
+                shape: [...currentShape]
+            };
+
+            if (editIndex >= 0) {
+                recipes[editIndex] = recipe;
+                showToast('Recipe updated successfully!');
+            } else {
+                recipes.push(recipe);
+                showToast('Recipe added successfully!');
+            }
+
+            saveToLocalStorage();
+            renderAll();
+            closeModal();
+        }
+
+        function downloadRecipesCSV() {
+            let csv = 'Item,Tier,Elements,Recipe,Shape\n';
+            recipes.forEach(recipe => {
+                const elements = recipe.elements.join(' ');
+                const recipeText = recipe.elements.join(' + ');
+                const shapeText = recipe.shape.join('');
+                csv += `"${recipe.item}",${recipe.tier},"${elements}","${recipeText}","${shapeText}"\n`;
+            });
+            downloadCSV(csv, 'crafting_recipes.csv');
+            showToast('Recipes CSV downloaded!');
+        }
+
+        function downloadCounterCSV() {
+            const counterMap = {};
+            recipes.forEach(recipe => {
+                const combo = recipe.elements.slice().sort().join(' + ');
+                counterMap[combo] = (counterMap[combo] || 0) + 1;
+            });
+
+            const sortedCombos = Object.entries(counterMap).sort((a, b) => b[1] - a[1]);
+            
+            let csv = 'Element Combination,Count\n';
+            sortedCombos.forEach(([combo, count]) => {
+                csv += `"${combo}",${count}\n`;
+            });
+            
+            downloadCSV(csv, 'element_combination_counter.csv');
+            showToast('Counter CSV downloaded!');
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (Array.isArray(data) && data.every(r => r.item && r.elements && r.tier && r.shape)) {
+                            if (confirm('This will replace all current recipes. Continue?')) {
+                                recipes = data;
+                                saveToLocalStorage();
+                                renderAll();
+                                showToast('Data imported successfully!');
+                            }
+                        } else {
+                            alert('Invalid file format!');
+                        }
+                    } catch (error) {
+                        alert('Error reading file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function resetData() {
+            if (confirm('This will reset all recipes to default. Continue?')) {
+                recipes = [...defaultRecipes];
+                saveToLocalStorage();
+                renderAll();
+                showToast('Data reset to default!', 'warning');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'danger' ? '#dc3545' : 
+                                     type === 'warning' ? '#ffc107' : '#28a745';
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('recipeModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        loadRecipes();
+    </script>
+</body>
+</html>
