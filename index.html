@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crafting Recipe Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 Crafting Recipe Manager</h1>
+            <p>Manage your crafting recipes with ease</p>
+        </header>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openAddModal()">
+                ➕ Add New Recipe
+            </button>
+            <button class="btn btn-success" onclick="downloadRecipesCSV()">
+                📥 Export Recipes CSV
+            </button>
+            <button class="btn btn-info" onclick="downloadCounterCSV()">
+                📊 Export Counter CSV
+            </button>
+            <button class="btn btn-warning" onclick="importData()">
+                📤 Import Data
+            </button>
+            <button class="btn btn-danger" onclick="resetData()">
+                🔄 Reset to Default
+            </button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search recipes..." oninput="filterRecipes()">
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-title">📊 Recipe Statistics</div>
+                    <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">
+                        <span id="totalRecipes">0</span> 
+                        <span style="font-size: 0.4em; opacity: 0.8;">Total Recipes</span>
+                    </div>
+                    <div class="tier-breakdown">
+                        <div class="tier-stat">
+                            <div class="tier-stat-label">Tier 1</div>
+                            <div class="tier-stat-value" id="tier1Count">0</div>
+                        </div>
+                        <div class="tier-stat">
+                            <div class="tier-stat-label">Tier 2</div>
+                            <div class="tier-stat-value" id="tier2Count">0</div>
+                        </div>
+                        <div class="tier-stat">
+                            <div class="tier-stat-label">Tier 3</div>
+                            <div class="tier-stat-value" id="tier3Count">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📋 All Recipes</h2>
+                <div id="recipeTableContainer"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📊 Element Combination Counter</h2>
+                <div class="counter-grid" id="counterGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Recipe</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="recipeForm" onsubmit="saveRecipe(event)">
+                    <input type="hidden" id="editIndex" value="-1">
+                    
+                    <div class="form-group">
+                        <label for="itemName">Item Name *</label>
+                        <input type="text" id="itemName" required placeholder="Enter item name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="itemTier">Tier *</label>
+                        <select id="itemTier" required onchange="updateShapeGrid()">
+                            <option value="1">Tier 1 (3x3 Grid)</option>
+                            <option value="2">Tier 2 (4x4 Grid)</option>
+                            <option value="3">Tier 3 (5x5 Grid)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Elements & Amounts * (Check element and set amount needed)</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label" id="earthLabel">
+                                <input type="checkbox" name="elements" value="earth" onchange="toggleElementCheckbox(this)">
+                                <span>🌍 Earth</span>
+                                <input type="number" id="earthAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
+                            </label>
+                            <label class="checkbox-label" id="fireLabel">
+                                <input type="checkbox" name="elements" value="fire" onchange="toggleElementCheckbox(this)">
+                                <span>🔥 Fire</span>
+                                <input type="number" id="fireAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
+                            </label>
+                            <label class="checkbox-label" id="waterLabel">
+                                <input type="checkbox" name="elements" value="water" onchange="toggleElementCheckbox(this)">
+                                <span>💧 Water</span>
+                                <input type="number" id="waterAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
+                            </label>
+                            <label class="checkbox-label" id="windLabel">
+                                <input type="checkbox" name="elements" value="wind" onchange="toggleElementCheckbox(this)">
+                                <span>💨 Wind</span>
+                                <input type="number" id="windAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Effects (Optional)</label>
+                        <div class="effects-inputs">
+                            <div class="effect-input">
+                                <label>Effect 1 ★</label>
+                                <input type="text" id="effect1" placeholder="Enter effect description">
+                            </div>
+                            <div class="effect-input">
+                                <label>Effect 2 ★</label>
+                                <input type="text" id="effect2" placeholder="Enter effect description">
+                            </div>
+                            <div class="effect-input">
+                                <label>Effect 3 ★</label>
+                                <input type="text" id="effect3" placeholder="Enter effect description">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="shape-editor">
+                        <div class="shape-editor-title">
+                            <span>🎨 Recipe Shape Pattern</span>
+                            <button type="button" class="clear-shape-btn" onclick="clearShape()">
+                                Clear Pattern
+                            </button>
+                        </div>
+                        <div style="text-align: center;">
+                            <div id="shapeEditorGrid" class="shape-editor-grid"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            💾 Save Recipe
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="closeModal()" style="flex: 1;">
+                            ❌ Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
