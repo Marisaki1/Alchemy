@@ -5,188 +5,385 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crafting Recipe Manager</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Tab Navigation Styles */
+        .tab-navigation {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #e9ecef;
+            padding: 0 30px;
+            gap: 5px;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -3px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Category Badge Styles */
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .category-safe { background: #28a745; color: white; }
+        .category-medium { background: #ffc107; color: #333; }
+        .category-elite { background: #dc3545; color: white; }
+        .category-start { background: #17a2b8; color: white; }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🔮 Crafting Recipe Manager</h1>
-            <p>Manage your crafting recipes with ease</p>
+            <p>Manage your recipes, locations, and ingredients with ease</p>
         </header>
 
-        <div class="toolbar">
-            <button class="btn btn-primary" onclick="openAddModal()">
-                ➕ Add New Recipe
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="recipes">
+                📋 Recipes
             </button>
-            <button class="btn btn-success" onclick="downloadRecipesCSV()">
-                📥 Export Recipes CSV
+            <button class="tab-button" data-tab="locations">
+                🗺️ Locations
             </button>
-            <button class="btn btn-info" onclick="downloadCounterCSV()">
-                📊 Export Counter CSV
+            <button class="tab-button" data-tab="ingredients">
+                🌟 Ingredients
             </button>
-            <button class="btn btn-warning" onclick="importData()">
-                📤 Import Data
-            </button>
-            <button class="btn btn-danger" onclick="resetData()">
-                🔄 Reset to Default
-            </button>
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Search recipes..." oninput="applyFilters()">
+        </div>
+
+        <!-- Recipes Tab Content -->
+        <div id="recipes-tab" class="tab-content active">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="recipesModule.openAddModal()">
+                    ➕ Add New Recipe
+                </button>
+                <button class="btn btn-success" onclick="recipesModule.downloadRecipesCSV()">
+                    📥 Export Recipes CSV
+                </button>
+                <button class="btn btn-info" onclick="recipesModule.downloadCounterCSV()">
+                    📊 Export Counter CSV
+                </button>
+                <button class="btn btn-warning" onclick="recipesModule.importData()">
+                    📤 Import Data
+                </button>
+                <button class="btn btn-danger" onclick="recipesModule.resetData()">
+                    🔄 Reset to Default
+                </button>
+                <div class="search-box">
+                    <input type="text" id="recipeSearchInput" placeholder="🔍 Search recipes..." oninput="recipesModule.applyFilters()">
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-title">📊 Recipe Statistics</div>
+                        <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">
+                            <span id="totalRecipes">0</span> 
+                            <span style="font-size: 0.4em; opacity: 0.8;">Total Recipes</span>
+                        </div>
+                        <div class="tier-breakdown">
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Tier 1</div>
+                                <div class="tier-stat-value" id="tier1Count">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Tier 2</div>
+                                <div class="tier-stat-value" id="tier2Count">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Tier 3</div>
+                                <div class="tier-stat-value" id="tier3Count">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Filter and Sort Controls -->
+                <div class="section filter-sort-section">
+                    <h2 class="section-title">🎯 Filter & Sort Options</h2>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">🎚️</span>
+                                <span>Sort By:</span>
+                            </label>
+                            <select id="sortSelect" class="filter-select" onchange="recipesModule.applyFilters()">
+                                <option value="name-asc">Item Name (A → Z)</option>
+                                <option value="name-desc">Item Name (Z → A)</option>
+                                <option value="tier-asc">Tier (1 → 3)</option>
+                                <option value="tier-desc">Tier (3 → 1)</option>
+                                <option value="elements-asc">Elements (Least → Most)</option>
+                                <option value="elements-desc">Elements (Most → Least)</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">📊</span>
+                                <span>Filter by Tier:</span>
+                            </label>
+                            <select id="tierFilter" class="filter-select" onchange="recipesModule.applyFilters()">
+                                <option value="all">All Tiers</option>
+                                <option value="1">Tier 1 Only</option>
+                                <option value="2">Tier 2 Only</option>
+                                <option value="3">Tier 3 Only</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">🌟</span>
+                                <span>Filter by Elements:</span>
+                            </label>
+                            <div class="element-filters">
+                                <label class="element-filter-item">
+                                    <input type="checkbox" id="filterEarth" value="earth" onchange="recipesModule.applyFilters()">
+                                    <span class="element earth">🌍 Earth</span>
+                                </label>
+                                <label class="element-filter-item">
+                                    <input type="checkbox" id="filterFire" value="fire" onchange="recipesModule.applyFilters()">
+                                    <span class="element fire">🔥 Fire</span>
+                                </label>
+                                <label class="element-filter-item">
+                                    <input type="checkbox" id="filterWater" value="water" onchange="recipesModule.applyFilters()">
+                                    <span class="element water">💧 Water</span>
+                                </label>
+                                <label class="element-filter-item">
+                                    <input type="checkbox" id="filterWind" value="wind" onchange="recipesModule.applyFilters()">
+                                    <span class="element wind">💨 Wind</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">✨</span>
+                                <span>Filter by Effects:</span>
+                            </label>
+                            <select id="effectsFilter" class="filter-select" onchange="recipesModule.applyFilters()">
+                                <option value="all">All Recipes</option>
+                                <option value="with-effects">With Effects Only</option>
+                                <option value="no-effects">No Effects Only</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">🔢</span>
+                                <span>Element Count:</span>
+                            </label>
+                            <select id="elementCountFilter" class="filter-select" onchange="recipesModule.applyFilters()">
+                                <option value="all">Any Count</option>
+                                <option value="1">Single Element</option>
+                                <option value="2">Two Elements</option>
+                                <option value="3">Three Elements</option>
+                                <option value="4">Four Elements</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="recipesModule.clearFilters()">
+                            🔄 Clear All Filters
+                        </button>
+                    </div>
+
+                    <div class="filter-status">
+                        <span id="filterStatus">Showing <strong id="filteredCount">0</strong> of <strong id="totalCount">0</strong> recipes</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">📋 All Recipes</h2>
+                    <div id="recipeTableContainer"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header-with-controls">
+                        <h2 class="section-title">📊 Element Combination Counter</h2>
+                        <label class="counter-filter-checkbox">
+                            <input type="checkbox" id="counterFilterCheckbox" onchange="recipesModule.updateCounter()">
+                            <span>Display only filtered recipes</span>
+                        </label>
+                    </div>
+                    <div class="counter-stats" id="counterStats">
+                        <span>Analyzing <strong id="counterRecipeCount">0</strong> recipes</span>
+                    </div>
+                    <div class="counter-grid" id="counterGrid"></div>
+                </div>
             </div>
         </div>
 
-        <div class="content">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-card-title">📊 Recipe Statistics</div>
-                    <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">
-                        <span id="totalRecipes">0</span> 
-                        <span style="font-size: 0.4em; opacity: 0.8;">Total Recipes</span>
-                    </div>
-                    <div class="tier-breakdown">
-                        <div class="tier-stat">
-                            <div class="tier-stat-label">Tier 1</div>
-                            <div class="tier-stat-value" id="tier1Count">0</div>
-                        </div>
-                        <div class="tier-stat">
-                            <div class="tier-stat-label">Tier 2</div>
-                            <div class="tier-stat-value" id="tier2Count">0</div>
-                        </div>
-                        <div class="tier-stat">
-                            <div class="tier-stat-label">Tier 3</div>
-                            <div class="tier-stat-value" id="tier3Count">0</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="pieChart"></canvas>
+        <!-- Locations Tab Content -->
+        <div id="locations-tab" class="tab-content">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="locationsModule.openAddModal()">
+                    ➕ Add New Location
+                </button>
+                <button class="btn btn-success" onclick="locationsModule.exportCSV()">
+                    📥 Export Locations CSV
+                </button>
+                <button class="btn btn-warning" onclick="locationsModule.importData()">
+                    📤 Import Data
+                </button>
+                <button class="btn btn-danger" onclick="locationsModule.resetData()">
+                    🔄 Reset to Default
+                </button>
+                <div class="search-box">
+                    <input type="text" id="locationSearchInput" placeholder="🔍 Search locations..." oninput="locationsModule.applyFilters()">
                 </div>
             </div>
 
-            <!-- Filter and Sort Controls -->
-            <div class="section filter-sort-section">
-                <h2 class="section-title">🎯 Filter & Sort Options</h2>
-                
-                <div class="filter-controls">
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <span class="filter-icon">🎚️</span>
-                            <span>Sort By:</span>
-                        </label>
-                        <select id="sortSelect" class="filter-select" onchange="applyFilters()">
-                            <option value="name-asc">Item Name (A → Z)</option>
-                            <option value="name-desc">Item Name (Z → A)</option>
-                            <option value="tier-asc">Tier (1 → 3)</option>
-                            <option value="tier-desc">Tier (3 → 1)</option>
-                            <option value="elements-asc">Elements (Least → Most)</option>
-                            <option value="elements-desc">Elements (Most → Least)</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <span class="filter-icon">📊</span>
-                            <span>Filter by Tier:</span>
-                        </label>
-                        <select id="tierFilter" class="filter-select" onchange="applyFilters()">
-                            <option value="all">All Tiers</option>
-                            <option value="1">Tier 1 Only</option>
-                            <option value="2">Tier 2 Only</option>
-                            <option value="3">Tier 3 Only</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <span class="filter-icon">🌟</span>
-                            <span>Filter by Elements:</span>
-                        </label>
-                        <div class="element-filters">
-                            <label class="element-filter-item">
-                                <input type="checkbox" id="filterEarth" value="earth" onchange="applyFilters()">
-                                <span class="element earth">🌍 Earth</span>
-                            </label>
-                            <label class="element-filter-item">
-                                <input type="checkbox" id="filterFire" value="fire" onchange="applyFilters()">
-                                <span class="element fire">🔥 Fire</span>
-                            </label>
-                            <label class="element-filter-item">
-                                <input type="checkbox" id="filterWater" value="water" onchange="applyFilters()">
-                                <span class="element water">💧 Water</span>
-                            </label>
-                            <label class="element-filter-item">
-                                <input type="checkbox" id="filterWind" value="wind" onchange="applyFilters()">
-                                <span class="element wind">💨 Wind</span>
-                            </label>
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-title">📊 Location Statistics</div>
+                        <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">
+                            <span id="totalLocations">0</span> 
+                            <span style="font-size: 0.4em; opacity: 0.8;">Total Locations</span>
+                        </div>
+                        <div class="tier-breakdown">
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Safe Zones</div>
+                                <div class="tier-stat-value" id="safeCount">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Medium Zones</div>
+                                <div class="tier-stat-value" id="mediumCount">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Elite Zones</div>
+                                <div class="tier-stat-value" id="eliteCount">0</div>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <span class="filter-icon">✨</span>
-                            <span>Filter by Effects:</span>
-                        </label>
-                        <select id="effectsFilter" class="filter-select" onchange="applyFilters()">
-                            <option value="all">All Recipes</option>
-                            <option value="with-effects">With Effects Only</option>
-                            <option value="no-effects">No Effects Only</option>
-                        </select>
+                    <div class="chart-container">
+                        <canvas id="locationPieChart"></canvas>
                     </div>
-
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <span class="filter-icon">🔢</span>
-                            <span>Element Count:</span>
-                        </label>
-                        <select id="elementCountFilter" class="filter-select" onchange="applyFilters()">
-                            <option value="all">Any Count</option>
-                            <option value="1">Single Element</option>
-                            <option value="2">Two Elements</option>
-                            <option value="3">Three Elements</option>
-                            <option value="4">Four Elements</option>
-                        </select>
-                    </div>
-
-                    <button class="btn btn-secondary" onclick="clearFilters()">
-                        🔄 Clear All Filters
-                    </button>
                 </div>
 
-                <div class="filter-status">
-                    <span id="filterStatus">Showing <strong id="filteredCount">0</strong> of <strong id="totalCount">0</strong> recipes</span>
+                <!-- Filter Controls -->
+                <div class="section filter-sort-section">
+                    <h2 class="section-title">🎯 Filter & Sort Options</h2>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">🎚️</span>
+                                <span>Sort By:</span>
+                            </label>
+                            <select id="locationSortSelect" class="filter-select" onchange="locationsModule.applyFilters()">
+                                <option value="name-asc">Zone Name (A → Z)</option>
+                                <option value="name-desc">Zone Name (Z → A)</option>
+                                <option value="category-asc">Category (A → Z)</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">📊</span>
+                                <span>Filter by Category:</span>
+                            </label>
+                            <select id="categoryFilter" class="filter-select" onchange="locationsModule.applyFilters()">
+                                <option value="all">All Categories</option>
+                                <option value="SAFE">Safe Zones</option>
+                                <option value="MEDIUM">Medium Zones</option>
+                                <option value="ELITE">Elite Zones</option>
+                                <option value="START">Start Zone</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="locationsModule.clearFilters()">
+                            🔄 Clear All Filters
+                        </button>
+                    </div>
+
+                    <div class="filter-status">
+                        <span>Showing <strong id="locationFilteredCount">0</strong> of <strong id="locationTotalCount">0</strong> locations</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">🗺️ All Locations</h2>
+                    <div id="locationTableContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ingredients Tab Content -->
+        <div id="ingredients-tab" class="tab-content">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="ingredientsModule.openAddModal()">
+                    ➕ Add New Ingredient
+                </button>
+                <button class="btn btn-success" onclick="ingredientsModule.exportCSV()">
+                    📥 Export Ingredients CSV
+                </button>
+                <div class="search-box">
+                    <input type="text" id="ingredientSearchInput" placeholder="🔍 Search ingredients...">
                 </div>
             </div>
 
-            <div class="section">
-                <h2 class="section-title">📋 All Recipes</h2>
-                <div id="recipeTableContainer"></div>
-            </div>
-
-            <div class="section">
-                <div class="section-header-with-controls">
-                    <h2 class="section-title">📊 Element Combination Counter</h2>
-                    <label class="counter-filter-checkbox">
-                        <input type="checkbox" id="counterFilterCheckbox" onchange="updateCounter()">
-                        <span>Display only filtered recipes</span>
-                    </label>
+            <div class="content">
+                <div class="section">
+                    <div class="empty-state">
+                        <div style="font-size: 60px;">🌟</div>
+                        <h3>Ingredients Management</h3>
+                        <p>This feature is coming soon. Stay tuned!</p>
+                    </div>
                 </div>
-                <div class="counter-stats" id="counterStats">
-                    <span>Analyzing <strong id="counterRecipeCount">0</strong> recipes</span>
-                </div>
-                <div class="counter-grid" id="counterGrid"></div>
             </div>
         </div>
     </div>
 
-    <!-- Add/Edit Modal -->
+    <!-- Recipe Modal -->
     <div id="recipeModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Add New Recipe</h2>
-                <button class="close" onclick="closeModal()">&times;</button>
+                <h2 id="recipeModalTitle">Add New Recipe</h2>
+                <button class="close" onclick="recipesModule.closeModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="recipeForm" onsubmit="saveRecipe(event)">
-                    <input type="hidden" id="editIndex" value="-1">
+                <form id="recipeForm" onsubmit="recipesModule.saveRecipe(event)">
+                    <input type="hidden" id="recipeEditIndex" value="-1">
                     
                     <div class="form-group">
                         <label for="itemName">Item Name *</label>
@@ -195,7 +392,7 @@
 
                     <div class="form-group">
                         <label for="itemTier">Tier *</label>
-                        <select id="itemTier" required onchange="updateShapeGrid()">
+                        <select id="itemTier" required onchange="recipesModule.updateShapeGrid()">
                             <option value="1">Tier 1 (3x3 Grid)</option>
                             <option value="2">Tier 2 (4x4 Grid)</option>
                             <option value="3">Tier 3 (5x5 Grid)</option>
@@ -203,25 +400,25 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Elements & Amounts * (Check element and set amount needed)</label>
+                        <label>Elements & Amounts *</label>
                         <div class="checkbox-group">
                             <label class="checkbox-label" id="earthLabel">
-                                <input type="checkbox" name="elements" value="earth" onchange="toggleElementCheckbox(this)">
+                                <input type="checkbox" name="elements" value="earth" onchange="recipesModule.toggleElementCheckbox(this)">
                                 <span>🌍 Earth</span>
                                 <input type="number" id="earthAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
                             </label>
                             <label class="checkbox-label" id="fireLabel">
-                                <input type="checkbox" name="elements" value="fire" onchange="toggleElementCheckbox(this)">
+                                <input type="checkbox" name="elements" value="fire" onchange="recipesModule.toggleElementCheckbox(this)">
                                 <span>🔥 Fire</span>
                                 <input type="number" id="fireAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
                             </label>
                             <label class="checkbox-label" id="waterLabel">
-                                <input type="checkbox" name="elements" value="water" onchange="toggleElementCheckbox(this)">
+                                <input type="checkbox" name="elements" value="water" onchange="recipesModule.toggleElementCheckbox(this)">
                                 <span>💧 Water</span>
                                 <input type="number" id="waterAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
                             </label>
                             <label class="checkbox-label" id="windLabel">
-                                <input type="checkbox" name="elements" value="wind" onchange="toggleElementCheckbox(this)">
+                                <input type="checkbox" name="elements" value="wind" onchange="recipesModule.toggleElementCheckbox(this)">
                                 <span>💨 Wind</span>
                                 <input type="number" id="windAmount" min="1" max="99" value="1" placeholder="Qty" disabled>
                             </label>
@@ -249,7 +446,7 @@
                     <div class="shape-editor">
                         <div class="shape-editor-title">
                             <span>🎨 Recipe Shape Pattern</span>
-                            <button type="button" class="clear-shape-btn" onclick="clearShape()">
+                            <button type="button" class="clear-shape-btn" onclick="recipesModule.clearShape()">
                                 Clear Pattern
                             </button>
                         </div>
@@ -262,7 +459,76 @@
                         <button type="submit" class="btn btn-primary" style="flex: 1;">
                             💾 Save Recipe
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="closeModal()" style="flex: 1;">
+                        <button type="button" class="btn btn-danger" onclick="recipesModule.closeModal()" style="flex: 1;">
+                            ❌ Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div id="locationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="locationModalTitle">Add New Location</h2>
+                <button class="close" onclick="locationsModule.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm" onsubmit="locationsModule.saveLocation(event)">
+                    <input type="hidden" id="locationEditIndex" value="-1">
+                    
+                    <div class="form-group">
+                        <label for="locationCategory">Category *</label>
+                        <select id="locationCategory" required>
+                            <option value="SAFE">Safe Zone</option>
+                            <option value="MEDIUM">Medium Zone</option>
+                            <option value="ELITE">Elite Zone</option>
+                            <option value="START">Start Zone</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="zoneName">Zone Name *</label>
+                        <input type="text" id="zoneName" required placeholder="Enter zone name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="primaryElements">Primary Elements</label>
+                        <input type="text" id="primaryElements" placeholder="e.g., Fire + Water">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gatherAction">Gather Action</label>
+                        <textarea id="gatherAction" placeholder="Describe the gathering action"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="specialAction">Special / Study Action</label>
+                        <textarea id="specialAction" placeholder="Describe the special action"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="penalty">Penalty</label>
+                        <input type="text" id="penalty" placeholder="e.g., None">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="playerLimit">Player Limit</label>
+                        <input type="text" id="playerLimit" placeholder="e.g., Max 3">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gatherLimit">Gather Limit</label>
+                        <input type="text" id="gatherLimit" placeholder="e.g., Max 1">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            💾 Save Location
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="locationsModule.closeModal()" style="flex: 1;">
                             ❌ Cancel
                         </button>
                     </div>
@@ -274,6 +540,10 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
+    <!-- Load Scripts -->
+    <script src="recipes.js"></script>
+    <script src="locations.js"></script>
+    <script src="ingredients.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
