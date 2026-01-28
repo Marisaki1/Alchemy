@@ -84,6 +84,9 @@
             <button class="tab-button" data-tab="ingredients">
                 🌟 Ingredients
             </button>
+            <button class="tab-button" data-tab="game">
+                🎮 Game
+            </button>
         </div>
 
         <!-- Recipes Tab Content -->
@@ -357,17 +360,130 @@
                 <button class="btn btn-success" onclick="ingredientsModule.exportCSV()">
                     📥 Export Ingredients CSV
                 </button>
+                <button class="btn btn-warning" onclick="ingredientsModule.importData()">
+                    📤 Import Data
+                </button>
+                <button class="btn btn-danger" onclick="ingredientsModule.resetData()">
+                    🔄 Reset to Default
+                </button>
                 <div class="search-box">
-                    <input type="text" id="ingredientSearchInput" placeholder="🔍 Search ingredients...">
+                    <input type="text" id="ingredientSearchInput" placeholder="🔍 Search ingredients..." oninput="ingredientsModule.applyFilters()">
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-title">📊 Ingredient Statistics</div>
+                        <div style="font-size: 3em; font-weight: bold; margin: 10px 0;">
+                            <span id="totalIngredients">0</span> 
+                            <span style="font-size: 0.4em; opacity: 0.8;">Total Ingredients</span>
+                        </div>
+                        <div class="tier-breakdown">
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Fire</div>
+                                <div class="tier-stat-value" id="fireIngCount">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Water</div>
+                                <div class="tier-stat-value" id="waterIngCount">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Earth</div>
+                                <div class="tier-stat-value" id="earthIngCount">0</div>
+                            </div>
+                            <div class="tier-stat">
+                                <div class="tier-stat-label">Wind</div>
+                                <div class="tier-stat-value" id="windIngCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="ingredientPieChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="section filter-sort-section">
+                    <h2 class="section-title">🎯 Filter & Sort Options</h2>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">🎚️</span>
+                                <span>Sort By:</span>
+                            </label>
+                            <select id="ingredientSortSelect" class="filter-select" onchange="ingredientsModule.applyFilters()">
+                                <option value="name-asc">Name (A → Z)</option>
+                                <option value="name-desc">Name (Z → A)</option>
+                                <option value="size-asc">Size (Small → Huge)</option>
+                                <option value="cost-asc">Cost (Low → High)</option>
+                                <option value="cost-desc">Cost (High → Low)</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">📏</span>
+                                <span>Filter by Size:</span>
+                            </label>
+                            <select id="sizeFilter" class="filter-select" onchange="ingredientsModule.applyFilters()">
+                                <option value="all">All Sizes</option>
+                                <option value="Small">Small</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Large">Large</option>
+                                <option value="Huge">Huge</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <span class="filter-icon">🌟</span>
+                                <span>Filter by Element:</span>
+                            </label>
+                            <select id="elementTypeFilter" class="filter-select" onchange="ingredientsModule.applyFilters()">
+                                <option value="all">All Elements</option>
+                                <option value="fire">Fire Only</option>
+                                <option value="water">Water Only</option>
+                                <option value="earth">Earth Only</option>
+                                <option value="wind">Wind Only</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="ingredientsModule.clearFilters()">
+                            🔄 Clear All Filters
+                        </button>
+                    </div>
+
+                    <div class="filter-status">
+                        <span>Showing <strong id="ingredientFilteredCount">0</strong> of <strong id="ingredientTotalCount">0</strong> ingredients</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">🌟 All Ingredients</h2>
+                    <div id="ingredientTableContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Tab Content -->
+        <div id="game-tab" class="tab-content">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="gameModule.startGame()">
+                    🎮 Start Game
+                </button>
+                <div class="search-box">
+                    <input type="text" placeholder="🎮 Game features coming soon...">
                 </div>
             </div>
 
             <div class="content">
                 <div class="section">
                     <div class="empty-state">
-                        <div style="font-size: 60px;">🌟</div>
-                        <h3>Ingredients Management</h3>
-                        <p>This feature is coming soon. Stay tuned!</p>
+                        <div style="font-size: 60px;">🎮</div>
+                        <h3>Game Management</h3>
+                        <p>This feature is coming soon. Stay tuned for gameplay features!</p>
                     </div>
                 </div>
             </div>
@@ -537,6 +653,82 @@
         </div>
     </div>
 
+    <!-- Ingredient Modal -->
+    <div id="ingredientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="ingredientModalTitle">Add New Ingredient</h2>
+                <button class="close" onclick="ingredientsModule.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="ingredientForm" onsubmit="ingredientsModule.saveIngredient(event)">
+                    <input type="hidden" id="ingredientEditIndex" value="-1">
+                    
+                    <div class="form-group">
+                        <label for="ingredientSize">Size *</label>
+                        <select id="ingredientSize" required>
+                            <option value="Small">Small</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Large">Large</option>
+                            <option value="Huge">Huge</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredientQty">Quantity per Deck *</label>
+                        <input type="number" id="ingredientQty" required min="0" max="99" placeholder="e.g., 10">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ingredientCost">Cost Structure *</label>
+                        <input type="number" id="ingredientCost" required min="1" max="10" placeholder="e.g., 1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fireName">Fire Name *</label>
+                        <input type="text" id="fireName" required placeholder="e.g., Oil">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="waterName">Water Name *</label>
+                        <input type="text" id="waterName" required placeholder="e.g., Bucket of Water">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="earthName">Earth Name *</label>
+                        <input type="text" id="earthName" required placeholder="e.g., Herb">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="windName">Wind Name *</label>
+                        <input type="text" id="windName" required placeholder="e.g., Jar of Clean Air">
+                    </div>
+
+                    <div class="shape-editor">
+                        <div class="shape-editor-title">
+                            <span>🎨 Ingredient Shape (3x3 Grid)</span>
+                            <button type="button" class="clear-shape-btn" onclick="ingredientsModule.clearShape()">
+                                Clear Pattern
+                            </button>
+                        </div>
+                        <div style="text-align: center;">
+                            <div id="ingredientShapeEditorGrid" class="shape-editor-grid"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            💾 Save Ingredient
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="ingredientsModule.closeModal()" style="flex: 1;">
+                            ❌ Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
@@ -544,6 +736,7 @@
     <script src="recipes.js"></script>
     <script src="locations.js"></script>
     <script src="ingredients.js"></script>
+    <script src="game.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

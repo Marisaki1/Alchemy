@@ -198,6 +198,7 @@ function objectsToCSV(data, headers) {
 window.onclick = function(event) {
     const recipeModal = document.getElementById('recipeModal');
     const locationModal = document.getElementById('locationModal');
+    const ingredientModal = document.getElementById('ingredientModal');
     
     if (event.target === recipeModal) {
         recipesModule.closeModal();
@@ -205,6 +206,10 @@ window.onclick = function(event) {
     
     if (event.target === locationModal) {
         locationsModule.closeModal();
+    }
+    
+    if (event.target === ingredientModal) {
+        ingredientsModule.closeModal();
     }
 }
 
@@ -224,4 +229,5 @@ document.addEventListener('DOMContentLoaded', () => {
     recipesModule.init();
     locationsModule.init();
     ingredientsModule.init();
+    gameModule.init();
 });
