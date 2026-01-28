@@ -1,6 +1,6 @@
 // ============================================================================
 // CRAFTING RECIPE MANAGER - Main JavaScript Application
-// Version 2.0 - With Advanced Sorting and Filtering
+// Version 2.1 - With CSV Import Support
 // ============================================================================
 
 // ============================================================================
@@ -96,7 +96,6 @@ function saveToLocalStorage() {
  */
 function renderAll() {
     applyFilters();
-    //renderCounter();
     updateStats();
     renderPieChart();
 }
@@ -809,27 +808,29 @@ function downloadCSV(content, filename) {
 }
 
 /**
- * Import data from JSON file
+ * Import data from CSV file
  */
 function importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.csv';
     input.onchange = (e) => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
-                const data = JSON.parse(event.target.result);
-                if (Array.isArray(data) && data.every(r => r.item && r.elements && r.tier && r.shape)) {
-                    if (confirm('This will replace all current recipes. Continue?')) {
-                        recipes = data;
+                const csvContent = event.target.result;
+                const importedRecipes = parseCSV(csvContent);
+                
+                if (importedRecipes.length > 0) {
+                    if (confirm(`Found ${importedRecipes.length} recipes. This will replace all current recipes. Continue?`)) {
+                        recipes = importedRecipes;
                         saveToLocalStorage();
                         renderAll();
-                        showToast('Data imported successfully!');
+                        showToast(`Successfully imported ${importedRecipes.length} recipes!`);
                     }
                 } else {
-                    alert('Invalid file format!');
+                    alert('No valid recipes found in CSV file!');
                 }
             } catch (error) {
                 alert('Error reading file: ' + error.message);
@@ -838,6 +839,123 @@ function importData() {
         reader.readAsText(file);
     };
     input.click();
+}
+
+/**
+ * Parse CSV content into recipe objects
+ * @param {string} csvContent - The CSV file content
+ * @returns {Array} Array of recipe objects
+ */
+function parseCSV(csvContent) {
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    // Skip header line
+    if (lines.length < 2) {
+        throw new Error('CSV file is empty or invalid');
+    }
+    
+    const recipes = [];
+    
+    // Process each line (skip header at index 0)
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        try {
+            const recipe = parseCSVLine(line);
+            if (recipe) {
+                recipes.push(recipe);
+            }
+        } catch (error) {
+            console.warn(`Skipping line ${i + 1}: ${error.message}`);
+        }
+    }
+    
+    return recipes;
+}
+
+/**
+ * Parse a single CSV line into a recipe object
+ * @param {string} line - CSV line
+ * @returns {Object|null} Recipe object or null if invalid
+ */
+function parseCSVLine(line) {
+    // Parse CSV with quoted fields
+    const fields = [];
+    let currentField = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            fields.push(currentField);
+            currentField = '';
+        } else {
+            currentField += char;
+        }
+    }
+    fields.push(currentField); // Add last field
+    
+    // Expected format: Item,Tier,Elements,Recipe,Effect 1,Effect 2,Effect 3,Shape
+    if (fields.length < 8) {
+        throw new Error('Invalid CSV format - not enough columns');
+    }
+    
+    const itemName = fields[0].trim();
+    const tier = parseInt(fields[1].trim());
+    const recipeText = fields[3].trim(); // e.g., "earth x2 + fire x1"
+    const effect1 = fields[4].trim();
+    const effect2 = fields[5].trim();
+    const effect3 = fields[6].trim();
+    const shapeText = fields[7].trim();
+    
+    // Validate required fields
+    if (!itemName || !tier || !recipeText) {
+        throw new Error('Missing required fields');
+    }
+    
+    // Parse elements from recipe text (e.g., "earth x2 + fire x1")
+    const elements = [];
+    const elementParts = recipeText.split('+').map(s => s.trim());
+    
+    for (const part of elementParts) {
+        const match = part.match(/(\w+)\s*x(\d+)/i);
+        if (match) {
+            const element = match[1].toLowerCase();
+            const amount = parseInt(match[2]);
+            
+            // Validate element type
+            if (['earth', 'fire', 'water', 'wind'].includes(element)) {
+                elements.push({ element, amount });
+            }
+        }
+    }
+    
+    if (elements.length === 0) {
+        throw new Error('No valid elements found');
+    }
+    
+    // Parse shape (should be a string of 0s and 1s)
+    const gridSize = tier === 1 ? 9 : tier === 2 ? 16 : 25;
+    let shape = new Array(gridSize).fill(0);
+    
+    if (shapeText) {
+        for (let i = 0; i < Math.min(shapeText.length, gridSize); i++) {
+            shape[i] = shapeText[i] === '1' ? 1 : 0;
+        }
+    }
+    
+    // Create recipe object
+    return {
+        item: itemName,
+        tier: tier,
+        elements: elements,
+        effects: [effect1, effect2, effect3],
+        shape: shape
+    };
 }
 
 /**
@@ -881,7 +999,7 @@ function showToast(message, type = 'success') {
 }
 
 // ============================================================================
-// NEW: Update counter based on checkbox state
+// Update counter based on checkbox state
 // ============================================================================
 /**
  * Update the element combination counter based on checkbox state
@@ -896,7 +1014,6 @@ function updateCounter() {
         renderCounter(recipes);
     }
 }
-
 
 // ============================================================================
 // Event Listeners
