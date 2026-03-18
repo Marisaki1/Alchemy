@@ -469,21 +469,139 @@
 
         <!-- Game Tab Content -->
         <div id="game-tab" class="tab-content">
-            <div class="toolbar">
-                <button class="btn btn-primary" onclick="gameModule.startGame()">
-                    🎮 Start Game
-                </button>
-                <div class="search-box">
-                    <input type="text" placeholder="🎮 Game features coming soon...">
+            <!-- Game Setup Modal -->
+            <div id="gameSetupModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>🎮 Game Setup</h2>
+                        <button class="close" onclick="gameModule.closeSetup()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="numPlayers">Number of Players *</label>
+                            <input type="number" id="numPlayers" min="1" max="6" value="2" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="startingAP">Starting AP per Turn *</label>
+                            <input type="number" id="startingAP" min="1" max="20" value="6" required>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 30px;">
+                            <button class="btn btn-primary" onclick="gameModule.startNewGame()" style="flex: 1;">
+                                🎮 Start Game
+                            </button>
+                            <button class="btn btn-danger" onclick="gameModule.closeSetup()" style="flex: 1;">
+                                ❌ Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="content">
-                <div class="section">
-                    <div class="empty-state">
-                        <div style="font-size: 60px;">🎮</div>
-                        <h3>Game Management</h3>
-                        <p>This feature is coming soon. Stay tuned for gameplay features!</p>
+            <!-- Game Header -->
+            <div class="game-header">
+                <div class="game-status">
+                    <div class="status-item">
+                        <span class="status-label">Current Player:</span>
+                        <span class="status-value" id="currentPlayerName">Player 1</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">AP Remaining:</span>
+                        <span class="status-value" id="currentAP">6</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Turn:</span>
+                        <span class="status-value" id="turnNumber">1</span>
+                    </div>
+                </div>
+                <div class="game-controls">
+                    <button class="btn btn-primary" onclick="gameModule.openSetup()">
+                        🎮 New Game
+                    </button>
+                    <button class="btn btn-warning" onclick="gameModule.resetGame()">
+                        🔄 Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Content - Split Screen -->
+            <div class="game-container">
+                <!-- Left Side - Map -->
+                <div class="game-left-panel">
+                    <div class="map-section">
+                        <h3 class="panel-title">🗺️ Game Map</h3>
+                        <div id="gameCanvas" class="game-canvas"></div>
+                    </div>
+                    
+                    <div class="current-tile-info">
+                        <h3 class="panel-title">📍 Current Location Info</h3>
+                        <div id="currentTileDetails" class="tile-details">
+                            <p>Select a tile to view details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side - Actions and Inventory -->
+                <div class="game-right-panel">
+                    <!-- Movement Controls -->
+                    <div class="action-section">
+                        <h3 class="panel-title">🧭 Movement (1 AP each)</h3>
+                        <div class="hex-movement-grid">
+                            <button class="movement-btn movement-n" onclick="gameModule.move('n')" id="moveN">
+                                <span class="dir-label">N</span>
+                            </button>
+                            <button class="movement-btn movement-nw" onclick="gameModule.move('nw')" id="moveNW">
+                                <span class="dir-label">NW</span>
+                            </button>
+                            <button class="movement-btn movement-ne" onclick="gameModule.move('ne')" id="moveNE">
+                                <span class="dir-label">NE</span>
+                            </button>
+                            <div class="movement-center">
+                                <div class="player-icon">👤</div>
+                            </div>
+                            <button class="movement-btn movement-sw" onclick="gameModule.move('sw')" id="moveSW">
+                                <span class="dir-label">SW</span>
+                            </button>
+                            <button class="movement-btn movement-se" onclick="gameModule.move('se')" id="moveSE">
+                                <span class="dir-label">SE</span>
+                            </button>
+                            <button class="movement-btn movement-s" onclick="gameModule.move('s')" id="moveS">
+                                <span class="dir-label">S</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Gather Actions -->
+                    <div class="action-section">
+                        <h3 class="panel-title">🌾 Gather Actions</h3>
+                        <div class="gather-info" id="gatherInfo">
+                            <p class="info-text">Times Gathered: <span id="gatherCount">0</span> / <span id="gatherLimit">0</span></p>
+                        </div>
+                        <button class="btn btn-success btn-large" onclick="gameModule.gatherResources()" id="gatherBtn">
+                            🌾 Gather Resources (2 AP)
+                        </button>
+                    </div>
+
+                    <!-- Player Inventory -->
+                    <div class="action-section">
+                        <h3 class="panel-title">🎒 Basket (<span id="basketCount">0</span>/8)</h3>
+                        <div class="basket-grid" id="basketGrid">
+                            <!-- Basket items will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- End Turn -->
+                    <div class="action-section">
+                        <button class="btn btn-primary btn-large" onclick="gameModule.endTurn()">
+                            ⏭️ End Turn
+                        </button>
+                    </div>
+
+                    <!-- All Players Info -->
+                    <div class="action-section">
+                        <h3 class="panel-title">👥 All Players</h3>
+                        <div id="allPlayersInfo" class="players-list">
+                            <!-- Players list will be populated here -->
+                        </div>
                     </div>
                 </div>
             </div>
